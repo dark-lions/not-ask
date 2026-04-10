@@ -3,275 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Scheduler Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Task Master Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background: var(--card);
-            padding: 32px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid var(--border);
-        }
-
-        h2 {
-            margin-top: 0;
-            font-weight: 600;
-            font-size: 1.5rem;
-            text-align: center;
-            color: var(--primary);
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.875rem;
-            margin-bottom: 6px;
-            color: #64748b;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            background: #fff;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        button {
-            width: 100%;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: 0.3s;
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        .status-badge {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 0.8rem;
-            padding: 10px;
-            border-radius: 8px;
-            background: #f1f5f9;
-            color: #475569;
-            min-height: 20px;
-        }
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: var(--card); padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; border: 1px solid var(--border); margin-bottom: 20px; box-sizing: border-box; }
+        h2 { margin: 0 0 20px 0; font-size: 1.2rem; text-align: center; color: var(--primary); letter-spacing: 0.5px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: #64748b; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; }
+        input:focus { border-color: var(--primary); }
+        button#addBtn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button#addBtn:active { transform: scale(0.98); }
+        
+        /* Task List */
+        .task-list { width: 100%; max-width: 400px; }
+        .task-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); transition: 0.3s; }
+        .task-info { display: flex; flex-direction: column; }
+        .task-name { font-weight: 600; font-size: 1rem; color: #334155; }
+        .task-time { font-size: 0.85rem; color: #64748b; margin-top: 2px; }
+        .delete-btn { background: #fee2e2; color: #ef4444; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .delete-btn:hover { background: #fecaca; }
     </style>
 </head>
-<body onclick="enableNotifications()">
+<body onclick="enableNotif()">
 
 <div class="container">
-    <h2>Task Scheduler</h2>
-    
+    <h2>NEW TASK</h2>
     <div class="input-group">
-        <label>Task Description</label>
-        <input type="text" id="taskInput" placeholder="Enter your task here...">
+        <label>Task Title</label>
+        <input type="text" id="taskInput" placeholder="Enter task...">
     </div>
-
     <div class="input-group">
-        <label>Reminder Time</label>
+        <label>Time</label>
         <input type="time" id="taskTime">
     </div>
-
-    <button onclick="scheduleTask()">Set Reminder</button>
-
-    <div id="status" class="status-badge">Tap anywhere to enable alerts</div>
+    <button id="addBtn" onclick="addTask()">Schedule Task</button>
 </div>
 
+<div class="task-list" id="taskList"></div>
+
 <script>
-    // 1. Service Worker Registration
+    let tasks = JSON.parse(localStorage.getItem('saved_tasks')) || [];
+
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW Registered'))
-            .catch(err => console.log('SW Error', err));
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log("Ready");
         });
     }
 
-    // 2. Function to request permission on first click (Firefox Fix)
-    function enableNotifications() {
+    function enableNotif() {
         if (Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-                const status = document.getElementById('status');
-                if (permission === 'granted') {
-                    status.innerText = "Notifications Enabled ✓";
-                    status.style.color = "#10b981";
-                }
-            });
+            Notification.requestPermission();
         }
     }
 
-    // 3. Main Logic
-    function scheduleTask() {
-        const task = document.getElementById('taskInput').value;
+    function renderTasks() {
+        const list = document.getElementById('taskList');
+        list.innerHTML = '';
+        tasks.sort((a, b) => a.time.localeCompare(b.time));
+        tasks.forEach((t, i) => {
+            list.innerHTML += `
+                <div class="task-item">
+                    <div class="task-info">
+                        <span class="task-name">${t.name}</span>
+                        <span class="task-time">🕒 ${t.time}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteTask(${i})">Delete</button>
+                </div>
+            `;
+        });
+    }
+
+    function addTask() {
+        const name = document.getElementById('taskInput').value;
         const time = document.getElementById('taskTime').value;
-        const status = document.getElementById('status');
-
-        if (Notification.permission !== 'granted') {
-            alert("Please allow notification permission first!");
-            Notification.requestPermission();
-            return;
-        }
-
-        if (!task || !time) {
-            status.innerText = "Please enter task and time";
-            status.style.color = "#ef4444";
-            return;
-        }
-
-        // Calculate Delay
-        const [hours, minutes] = time.split(':');
-        const now = new Date();
-        const target = new Date();
-        target.setHours(hours, minutes, 0);
-
-        let delay = target.getTime() - now.getTime();
         
-        // If time is in the past, set for tomorrow
-        if (delay <= 0) {
-            delay += 24 * 60 * 60 * 1000;
-        }
+        if (!name || !time) return alert("Fill all fields");
+        if (Notification.permission !== 'granted') return alert("Enable Notification First!");
 
+        const id = Date.now();
+        const newTask = { id, name, time };
+        tasks.push(newTask);
+        localStorage.setItem('saved_tasks', JSON.stringify(tasks));
+        
+        // Timer calculation
+        const [h, m] = time.split(':');
+        const target = new Date();
+        target.setHours(h, m, 0);
+        let delay = target.getTime() - new Date().getTime();
+        if (delay < 0) delay += 24 * 60 * 60 * 1000;
+
+        // Message to SW
         if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
-                type: 'SCHEDULE_TASK',
-                task: task,
-                delay: delay
+                type: 'SCHEDULE', task: name, delay: delay, id: id
             });
-            status.innerText = `Reminder set for ${time}`;
-            status.style.color = "#2563eb";
-        } else {
-            status.innerText = "Error: Please refresh the page";
-            status.style.color = "#ef4444";
         }
+
+        renderTasks();
+        document.getElementById('taskInput').value = '';
     }
-</script>
 
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Scheduler Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background: var(--card);
-            padding: 32px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid var(--border);
-        }
-
-        h2 {
-            margin-top: 0;
-            font-weight: 600;
-            font-size: 1.5rem;
-            color: var(--text);
-            text-align: center;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.875rem;
-            margin-bottom: 6px;
-            color: #64748b;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        button {
-            width: 100%;
-            background-color: var(--primary);
-e {
-            alert("Please refresh the page once to activate the scheduler.");
-        }
+    function deleteTask(i) {
+        tasks.splice(i, 1);
+        localStorage.setItem('saved_tasks', JSON.stringify(tasks));
+        renderTasks();
     }
-</script>
 
+    renderTasks();
+</script>
 </body>
 </html>
