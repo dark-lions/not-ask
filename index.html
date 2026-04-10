@@ -40,6 +40,199 @@
             margin-top: 0;
             font-weight: 600;
             font-size: 1.5rem;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            margin-bottom: 6px;
+            color: #64748b;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background: #fff;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .status-badge {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #475569;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body onclick="enableNotifications()">
+
+<div class="container">
+    <h2>Task Scheduler</h2>
+    
+    <div class="input-group">
+        <label>Task Description</label>
+        <input type="text" id="taskInput" placeholder="Enter your task here...">
+    </div>
+
+    <div class="input-group">
+        <label>Reminder Time</label>
+        <input type="time" id="taskTime">
+    </div>
+
+    <button onclick="scheduleTask()">Set Reminder</button>
+
+    <div id="status" class="status-badge">Tap anywhere to enable alerts</div>
+</div>
+
+<script>
+    // 1. Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW Registered'))
+            .catch(err => console.log('SW Error', err));
+        });
+    }
+
+    // 2. Function to request permission on first click (Firefox Fix)
+    function enableNotifications() {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                const status = document.getElementById('status');
+                if (permission === 'granted') {
+                    status.innerText = "Notifications Enabled ✓";
+                    status.style.color = "#10b981";
+                }
+            });
+        }
+    }
+
+    // 3. Main Logic
+    function scheduleTask() {
+        const task = document.getElementById('taskInput').value;
+        const time = document.getElementById('taskTime').value;
+        const status = document.getElementById('status');
+
+        if (Notification.permission !== 'granted') {
+            alert("Please allow notification permission first!");
+            Notification.requestPermission();
+            return;
+        }
+
+        if (!task || !time) {
+            status.innerText = "Please enter task and time";
+            status.style.color = "#ef4444";
+            return;
+        }
+
+        // Calculate Delay
+        const [hours, minutes] = time.split(':');
+        const now = new Date();
+        const target = new Date();
+        target.setHours(hours, minutes, 0);
+
+        let delay = target.getTime() - now.getTime();
+        
+        // If time is in the past, set for tomorrow
+        if (delay <= 0) {
+            delay += 24 * 60 * 60 * 1000;
+        }
+
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_TASK',
+                task: task,
+                delay: delay
+            });
+            status.innerText = `Reminder set for ${time}`;
+            status.style.color = "#2563eb";
+        } else {
+            status.innerText = "Error: Please refresh the page";
+            status.style.color = "#ef4444";
+        }
+    }
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-weight: 600;
+            font-size: 1.5rem;
             color: var(--text);
             text-align: center;
         }
@@ -74,96 +267,7 @@
         button {
             width: 100%;
             background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 1rem;
-        }
-
-        button:hover {
-            background-color: #1d4ed8;
-        }
-
-        .status-badge {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 0.75rem;
-            padding: 8px;
-            border-radius: 20px;
-            background: #f1f5f9;
-            color: #475569;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2>Task Scheduler</h2>
-    
-    <div class="input-group">
-        <label>Task Description</label>
-        <input type="text" id="taskInput" placeholder="What needs to be done?">
-    </div>
-
-    <div class="input-group">
-        <label>Reminder Time</label>
-        <input type="time" id="taskTime">
-    </div>
-
-    <button onclick="scheduleTask()">Schedule Notification</button>
-
-    <div id="status" class="status-badge">Waiting for input...</div>
-</div>
-
-<script>
-    // Permission request
-    if (Notification.permission !== 'granted') {
-        Notification.requestPermission();
-    }
-
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log("Service Worker Active"));
-    }
-
-    function scheduleTask() {
-        const task = document.getElementById('taskInput').value;
-        const time = document.getElementById('taskTime').value;
-        const status = document.getElementById('status');
-
-        if (!task || !time) {
-            status.innerText = "Please fill all fields";
-            status.style.color = "#ef4444";
-            return;
-        }
-
-        const [hours, minutes] = time.split(':');
-        const now = new Date();
-        const targetTime = new Date();
-        targetTime.setHours(hours, minutes, 0);
-
-        if (targetTime <= now) {
-            status.innerText = "Please select a future time";
-            return;
-        }
-
-        const delay = targetTime.getTime() - now.getTime();
-
-        // Send to Service Worker
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'SCHEDULE_TASK',
-                task: task,
-                delay: delay
-            });
-            status.innerText = `Task scheduled for ${time}`;
-            status.style.color = "#10b981";
-        } else {
+e {
             alert("Please refresh the page once to activate the scheduler.");
         }
     }
