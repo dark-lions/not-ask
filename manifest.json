@@ -8,7 +8,7 @@
   "icons": [
     {
       "src": "https://dark-lions.github.io/not-ask/logo.png",
-      "sizes": "192x192",
+      "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
     },
