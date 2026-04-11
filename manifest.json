@@ -1,19 +1,19 @@
 {
-  "name": "Task Master",
+  "name": "Task Master Pro",
   "short_name": "TaskMaster",
-  "start_url": "./index.html",
+  "start_url": "https://dark-lions.github.io/not-ask/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "./logo.png",
-      "sizes": "48x48",
+      "src": "https://dark-lions.github.io/not-ask/logo.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./logo.png",
+      "src": "https://dark-lions.github.io/not-ask/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
